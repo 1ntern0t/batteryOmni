@@ -9,8 +9,9 @@ import android.os.BatteryManager;
 import android.os.Bundle;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-//test for request
+
 import io.selectedfew.batteryomni.databinding.ActivityMainBinding;
+//calls for wakelocks, but is ugly quite ugly!
 
 public class MainActivity extends AppCompatActivity {
 
@@ -32,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
 
         checkRootAccess();
+        readWakelocks();
     }
 
     @Override
@@ -85,9 +87,32 @@ public class MainActivity extends AppCompatActivity {
             su.getOutputStream().flush();
             su.getOutputStream().close();
             su.waitFor();
-            binding.sampleText.append("\nRoot: OK");
+            binding.sampleText.append("\nRoot: OK 🔓");
         } catch (Exception e) {
             binding.sampleText.append("\nRoot: ❌ NOT available");
         }
+    }
+
+    private void readWakelocks() {
+        new Thread(() -> {
+            try {
+                Process su = Runtime.getRuntime().exec("su");
+                su.getOutputStream().write("dumpsys power | grep Wake\n".getBytes());
+                su.getOutputStream().flush();
+                su.getOutputStream().close();
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(su.getInputStream()));
+                StringBuilder wakelockData = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    wakelockData.append(line).append("\n");
+                }
+                su.waitFor();
+
+                runOnUiThread(() -> binding.sampleText.append("\n" + wakelockData.toString()));
+            } catch (Exception e) {
+                runOnUiThread(() -> binding.sampleText.append("\nWakelocks: ❌ Error reading"));
+            }
+        }).start();
     }
 }
