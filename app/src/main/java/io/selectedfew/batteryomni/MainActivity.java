@@ -7,11 +7,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Bundle;
+import android.widget.TextView;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-
-import io.selectedfew.batteryomni.databinding.ActivityMainBinding;
-//calls for wakelocks, but is ugly quite ugly!
 
 public class MainActivity extends AppCompatActivity {
 
@@ -19,15 +17,17 @@ public class MainActivity extends AppCompatActivity {
         System.loadLibrary("batteryomni");
     }
 
-    private ActivityMainBinding binding;
+    private TextView batteryStatsTextView;
+    private TextView wakelockTextView;
     private BatteryReceiver batteryReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-        binding = ActivityMainBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        batteryStatsTextView = findViewById(R.id.batteryStatsTextView);
+        wakelockTextView = findViewById(R.id.wakelockTextView);
 
         batteryReceiver = new BatteryReceiver();
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
@@ -53,6 +53,9 @@ public class MainActivity extends AppCompatActivity {
             int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
             int voltage = intent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1);
             int temp = intent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1);
+            int health = intent.getIntExtra(BatteryManager.EXTRA_HEALTH, -1);
+            int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+            String technology = intent.getStringExtra(BatteryManager.EXTRA_TECHNOLOGY);
 
             float percent = (level / (float) scale) * 100;
 
@@ -74,8 +77,53 @@ public class MainActivity extends AppCompatActivity {
                     statusText = "Unknown";
             }
 
-            String finalText = stringFromJNI((int) percent, statusText, voltage, temp);
-            binding.sampleText.setText(finalText);
+            String healthText;
+            switch (health) {
+                case BatteryManager.BATTERY_HEALTH_GOOD:
+                    healthText = "Good";
+                    break;
+                case BatteryManager.BATTERY_HEALTH_OVERHEAT:
+                    healthText = "Overheat";
+                    break;
+                case BatteryManager.BATTERY_HEALTH_DEAD:
+                    healthText = "Dead";
+                    break;
+                case BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE:
+                    healthText = "Over Voltage";
+                    break;
+                case BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE:
+                    healthText = "Failure";
+                    break;
+                default:
+                    healthText = "Unknown";
+            }
+
+            String plugType;
+            switch (plugged) {
+                case BatteryManager.BATTERY_PLUGGED_USB:
+                    plugType = "USB";
+                    break;
+                case BatteryManager.BATTERY_PLUGGED_AC:
+                    plugType = "AC";
+                    break;
+                case BatteryManager.BATTERY_PLUGGED_WIRELESS:
+                    plugType = "Wireless";
+                    break;
+                default:
+                    plugType = "Not Plugged";
+            }
+
+            BatteryManager bm = (BatteryManager) getSystemService(BATTERY_SERVICE);
+            int chargeCounter = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER);
+
+            StringBuilder info = new StringBuilder();
+            info.append(stringFromJNI((int) percent, statusText, voltage, temp)).append("\n");
+            info.append("Health: ").append(healthText).append("\n");
+            info.append("Plug Type: ").append(plugType).append("\n");
+            info.append("Technology: ").append(technology != null ? technology : "Unknown").append("\n");
+            info.append("Charge Counter: ").append(chargeCounter >= 0 ? chargeCounter + " µAh" : "Unavailable");
+
+            batteryStatsTextView.setText(info.toString());
         }
     }
 
@@ -87,9 +135,9 @@ public class MainActivity extends AppCompatActivity {
             su.getOutputStream().flush();
             su.getOutputStream().close();
             su.waitFor();
-            binding.sampleText.append("\nRoot: OK 🔓");
+            batteryStatsTextView.append("\nRoot: OK 🔓");
         } catch (Exception e) {
-            binding.sampleText.append("\nRoot: ❌ NOT available");
+            batteryStatsTextView.append("\nRoot: ❌ NOT available");
         }
     }
 
@@ -109,9 +157,9 @@ public class MainActivity extends AppCompatActivity {
                 }
                 su.waitFor();
 
-                runOnUiThread(() -> binding.sampleText.append("\n" + wakelockData.toString()));
+                runOnUiThread(() -> wakelockTextView.setText(wakelockData.toString()));
             } catch (Exception e) {
-                runOnUiThread(() -> binding.sampleText.append("\nWakelocks: ❌ Error reading"));
+                runOnUiThread(() -> wakelockTextView.setText("Wakelocks: ❌ Error reading"));
             }
         }).start();
     }
