@@ -1,10 +1,16 @@
 package io.selectedfew.batteryomni;
 
 import androidx.appcompat.app.AppCompatActivity;
-import android.content.*;
-import android.os.*;
-import java.io.*;
-
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.BatteryManager;
+import android.os.Bundle;
+import android.widget.TextView;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+//test for request
 import io.selectedfew.batteryomni.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
@@ -19,11 +25,14 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         batteryReceiver = new BatteryReceiver();
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+
+        checkRootAccess();
     }
 
     @Override
@@ -32,29 +41,8 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(batteryReceiver);
     }
 
+    // Native method
     public native String stringFromJNI(int level, String status, int voltage, int temperature);
-
-    private String getWakelockStatus() {
-        StringBuilder output = new StringBuilder();
-        try {
-            java.lang.Process process = Runtime.getRuntime().exec("dumpsys power");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.toLowerCase().contains("wake") || line.toLowerCase().contains("held")) {
-                    output.append(line.trim()).append("\n");
-                }
-            }
-
-            reader.close();
-            process.waitFor();
-        } catch (IOException | InterruptedException e) {
-            output.append("Wakelock check failed.\n");
-        }
-
-        return output.toString().isEmpty() ? "No wakelocks detected." : output.toString();
-    }
 
     private class BatteryReceiver extends BroadcastReceiver {
         @Override
@@ -85,10 +73,22 @@ public class MainActivity extends AppCompatActivity {
                     statusText = "Unknown";
             }
 
-            String info = stringFromJNI((int) percent, statusText, voltage, temp);
-            String wakelocks = getWakelockStatus();
+            String finalText = stringFromJNI((int) percent, statusText, voltage, temp);
+            binding.sampleText.setText(finalText);
+        }
+    }
 
-            binding.sampleText.setText(info + "\n\nWakelocks:\n" + wakelocks);
+    private void checkRootAccess() {
+        try {
+            Process su = Runtime.getRuntime().exec("su");
+            BufferedReader in = new BufferedReader(new InputStreamReader(su.getInputStream()));
+            su.getOutputStream().write("echo RootCheck\n".getBytes());
+            su.getOutputStream().flush();
+            su.getOutputStream().close();
+            su.waitFor();
+            binding.sampleText.append("\nRoot: OK");
+        } catch (Exception e) {
+            binding.sampleText.append("\nRoot: ❌ NOT available");
         }
     }
 }
