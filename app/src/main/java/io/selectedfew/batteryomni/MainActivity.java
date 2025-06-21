@@ -1,11 +1,15 @@
 package io.selectedfew.batteryomni;
 
 import androidx.appcompat.app.AppCompatActivity;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
@@ -26,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView batteryStatsTextView;
     private TextView wakelockTextView;
     private BatteryReceiver batteryReceiver;
+    private static final String CHANNEL_ID = "batteryomni_channel";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,13 +40,18 @@ public class MainActivity extends AppCompatActivity {
         batteryStatsTextView = findViewById(R.id.batteryStatsTextView);
         wakelockTextView = findViewById(R.id.wakelockTextView);
 
+        batteryStatsTextView.setPadding(
+                batteryStatsTextView.getPaddingLeft(),
+                batteryStatsTextView.getPaddingTop() + 200,
+                batteryStatsTextView.getPaddingRight(),
+                batteryStatsTextView.getPaddingBottom()
+        );
+
         Button genReportButton = findViewById(R.id.genReportButton);
         genReportButton.setOnClickListener(v -> generateFullReport());
 
         Button ramFlushButton = findViewById(R.id.ramFlushButton);
-        ramFlushButton.setOnClickListener(v -> {
-            // Placeholder for RAM Flush logic
-        });
+        ramFlushButton.setOnClickListener(v -> flushRAM());
 
         Button cpuBoostButton = findViewById(R.id.cpuBoostButton);
         cpuBoostButton.setOnClickListener(v -> {
@@ -51,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
         batteryReceiver = new BatteryReceiver();
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
 
+        createNotificationChannel();
         checkRootAccess();
         readWakelocks();
     }
@@ -202,6 +213,56 @@ public class MainActivity extends AppCompatActivity {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void flushRAM() {
+        new Thread(() -> {
+            try {
+                Process su = Runtime.getRuntime().exec("su");
+                su.getOutputStream().write("sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'\n".getBytes());
+                su.getOutputStream().flush();
+                su.getOutputStream().close();
+                su.waitFor();
+
+                runOnUiThread(() ->
+                        showNotification("WTF did you flush", "Dropped pagecache, dentries, and inodes ⚙️")
+                );
+            } catch (Exception e) {
+                runOnUiThread(() ->
+                        showNotification("Flush Failed", "Unable to flush RAM: " + e.getMessage())
+                );
+            }
+        }).start();
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    CHANNEL_ID,
+                    "Battery Omni Alerts",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private void showNotification(String title, String message) {
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                ? new Notification.Builder(this, CHANNEL_ID)
+                : new Notification.Builder(this);
+
+        builder.setContentTitle(title)
+                .setContentText(message)
+                .setSmallIcon(android.R.drawable.stat_notify_more)
+                .setAutoCancel(true);
+
+        if (manager != null) {
+            manager.notify((int) System.currentTimeMillis(), builder.build());
         }
     }
 }
