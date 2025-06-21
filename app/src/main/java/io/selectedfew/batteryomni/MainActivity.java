@@ -8,12 +8,17 @@ import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.widget.TextView;
+import android.view.View;
+import android.widget.Button;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-//This time wit battery report log
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 public class MainActivity extends AppCompatActivity {
 
     static {
@@ -22,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView batteryStatsTextView;
     private TextView wakelockTextView;
+    private Button clearLogButton;
     private BatteryReceiver batteryReceiver;
 
     @Override
@@ -31,12 +37,20 @@ public class MainActivity extends AppCompatActivity {
 
         batteryStatsTextView = findViewById(R.id.batteryStatsTextView);
         wakelockTextView = findViewById(R.id.wakelockTextView);
+        clearLogButton = findViewById(R.id.clearLogButton);
 
         batteryReceiver = new BatteryReceiver();
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
 
         checkRootAccess();
         readWakelocks();
+
+        clearLogButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearOutputFile();
+            }
+        });
     }
 
     @Override
@@ -127,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
 
             batteryStatsTextView.setText(info.toString());
 
-            writeToOutputFile("Battery Info:\n" + info.toString() + "\n\n");
+            writeToOutputFile("Battery Info (" + getCurrentTimestamp() + "):\n" + info.toString() + "\n\n");
         }
     }
 
@@ -162,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
                 su.waitFor();
 
                 runOnUiThread(() -> wakelockTextView.setText(wakelockData.toString()));
-                writeToOutputFile("Wakelock Info:\n" + wakelockData.toString());
+                writeToOutputFile("Wakelock Info (" + getCurrentTimestamp() + "):\n" + wakelockData.toString());
             } catch (Exception e) {
                 runOnUiThread(() -> wakelockTextView.setText("Wakelocks: ❌ Error reading"));
             }
@@ -182,5 +196,26 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void clearOutputFile() {
+        try {
+            File path = getExternalFilesDir(null);
+            if (path != null) {
+                File file = new File(path, "battery_report.txt");
+                if (file.exists()) {
+                    FileWriter writer = new FileWriter(file);
+                    writer.write("");
+                    writer.flush();
+                    writer.close();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getCurrentTimestamp() {
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
     }
 }
