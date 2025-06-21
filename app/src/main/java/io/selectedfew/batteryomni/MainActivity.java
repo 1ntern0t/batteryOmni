@@ -8,9 +8,13 @@ import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.widget.TextView;
+import android.widget.ScrollView;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+//This time wit battery report log
 public class MainActivity extends AppCompatActivity {
 
     static {
@@ -42,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(batteryReceiver);
     }
 
-    // Native method
     public native String stringFromJNI(int level, String status, int voltage, int temperature);
 
     private class BatteryReceiver extends BroadcastReceiver {
@@ -124,6 +127,8 @@ public class MainActivity extends AppCompatActivity {
             info.append("Charge Counter: ").append(chargeCounter >= 0 ? chargeCounter + " µAh" : "Unavailable");
 
             batteryStatsTextView.setText(info.toString());
+
+            writeToOutputFile("Battery Info:\n" + info.toString() + "\n\n");
         }
     }
 
@@ -158,9 +163,25 @@ public class MainActivity extends AppCompatActivity {
                 su.waitFor();
 
                 runOnUiThread(() -> wakelockTextView.setText(wakelockData.toString()));
+                writeToOutputFile("Wakelock Info:\n" + wakelockData.toString());
             } catch (Exception e) {
                 runOnUiThread(() -> wakelockTextView.setText("Wakelocks: ❌ Error reading"));
             }
         }).start();
+    }
+
+    private void writeToOutputFile(String data) {
+        try {
+            File path = getExternalFilesDir(null);
+            if (path != null) {
+                File file = new File(path, "battery_report.txt");
+                FileWriter writer = new FileWriter(file, true);
+                writer.append(data).append("\n");
+                writer.flush();
+                writer.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
