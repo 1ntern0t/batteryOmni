@@ -1,66 +1,78 @@
-<?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:orientation="vertical"
+    android:paddingTop="40dp"
+    android:padding="16dp">
 
-    <!-- Scrollable wakelock output -->
+    <TextView
+        android:id="@+id/batteryStatsTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Battery Info"
+        android:textSize="16sp"
+        android:layout_marginBottom="12dp"
+        android:background="#AA000000"
+        android:textColor="#FFFFFF"
+        android:padding="12dp"
+        android:typeface="monospace" />
+
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="8dp"
-        android:background="#FF000000">
+        android:layout_height="150dp"
+        android:background="#111111"
+        android:padding="12dp">
 
         <TextView
             android:id="@+id/wakelockTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="12sp"
+            android:text="Wakelock Info"
             android:textColor="#00FF00"
-            android:fontFamily="monospace" />
+            android:textSize="14sp"
+            android:typeface="monospace" />
     </ScrollView>
 
-    <!-- Floating battery stats (top-left) -->
-    <TextView
-        android:id="@+id/batteryStatsTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:padding="10dp"
-        android:textColor="#FFFFFF"
-        android:textSize="15sp"
-        android:background="#AA000000"
-        android:fontFamily="monospace"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="350dp" />
-
-    <!-- Scrollable button panel (bottom-left corner) -->
     <ScrollView
         android:layout_width="wrap_content"
-        android:layout_height="150dp"
-        android:layout_marginStart="10dp"
-        android:layout_marginBottom="10dp"
-        android:layout_gravity="bottom|start"
-        android:background="#66000000">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_gravity="start|top">
 
         <LinearLayout
+            android:id="@+id/buttonContainer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:background="#AA000000"
+            android:padding="8dp">
 
             <Button
-                android:id="@+id/clearLogButton"
+                android:id="@+id/ramFlushButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Clear Log"
+                android:text="RAM Flush"
                 android:textColor="#FFFFFF"
-                android:backgroundTint="#FF4444"
-                android:elevation="4dp" />
+                android:backgroundTint="#228B22"
+                android:layout_marginBottom="4dp" />
 
-            <!-- Future optimization buttons can be added here -->
+            <Button
+                android:id="@+id/cpuBoostButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CPU Boost"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#1E90FF"
+                android:layout_marginBottom="4dp" />
 
+            <Button
+                android:id="@+id/genReportButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Gen Report"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#8B0000" />
         </LinearLayout>
     </ScrollView>
 
-</FrameLayout>
+</LinearLayout>

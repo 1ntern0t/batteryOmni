@@ -7,9 +7,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Bundle;
-import android.widget.TextView;
-import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.File;
@@ -17,7 +16,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,7 +25,6 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView batteryStatsTextView;
     private TextView wakelockTextView;
-    private Button clearLogButton;
     private BatteryReceiver batteryReceiver;
 
     @Override
@@ -37,20 +34,25 @@ public class MainActivity extends AppCompatActivity {
 
         batteryStatsTextView = findViewById(R.id.batteryStatsTextView);
         wakelockTextView = findViewById(R.id.wakelockTextView);
-        clearLogButton = findViewById(R.id.clearLogButton);
+
+        Button genReportButton = findViewById(R.id.genReportButton);
+        genReportButton.setOnClickListener(v -> generateFullReport());
+
+        Button ramFlushButton = findViewById(R.id.ramFlushButton);
+        ramFlushButton.setOnClickListener(v -> {
+            // Placeholder for RAM Flush logic
+        });
+
+        Button cpuBoostButton = findViewById(R.id.cpuBoostButton);
+        cpuBoostButton.setOnClickListener(v -> {
+            // Placeholder for CPU Boost logic
+        });
 
         batteryReceiver = new BatteryReceiver();
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
 
         checkRootAccess();
         readWakelocks();
-
-        clearLogButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                clearOutputFile();
-            }
-        });
     }
 
     @Override
@@ -140,8 +142,6 @@ public class MainActivity extends AppCompatActivity {
             info.append("Charge Counter: ").append(chargeCounter >= 0 ? chargeCounter + " µAh" : "Unavailable");
 
             batteryStatsTextView.setText(info.toString());
-
-            writeToOutputFile("Battery Info (" + getCurrentTimestamp() + "):\n" + info.toString() + "\n\n");
         }
     }
 
@@ -176,46 +176,32 @@ public class MainActivity extends AppCompatActivity {
                 su.waitFor();
 
                 runOnUiThread(() -> wakelockTextView.setText(wakelockData.toString()));
-                writeToOutputFile("Wakelock Info (" + getCurrentTimestamp() + "):\n" + wakelockData.toString());
             } catch (Exception e) {
                 runOnUiThread(() -> wakelockTextView.setText("Wakelocks: ❌ Error reading"));
             }
         }).start();
     }
 
-    private void writeToOutputFile(String data) {
+    private void generateFullReport() {
+        String batteryInfo = batteryStatsTextView.getText().toString();
+        String wakelockInfo = wakelockTextView.getText().toString();
+        String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+
+        String fullReport = "Timestamp: " + timestamp + "\n\n"
+                + "Battery Info:\n" + batteryInfo + "\n\n"
+                + "Wakelock Info:\n" + wakelockInfo + "\n";
+
         try {
             File path = getExternalFilesDir(null);
             if (path != null) {
                 File file = new File(path, "battery_report.txt");
-                FileWriter writer = new FileWriter(file, true);
-                writer.append(data).append("\n");
+                FileWriter writer = new FileWriter(file, false);
+                writer.write(fullReport);
                 writer.flush();
                 writer.close();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private void clearOutputFile() {
-        try {
-            File path = getExternalFilesDir(null);
-            if (path != null) {
-                File file = new File(path, "battery_report.txt");
-                if (file.exists()) {
-                    FileWriter writer = new FileWriter(file);
-                    writer.write("");
-                    writer.flush();
-                    writer.close();
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private String getCurrentTimestamp() {
-        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
     }
 }
