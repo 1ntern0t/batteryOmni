@@ -35,15 +35,32 @@
         android:layout_marginStart="10dp"
         android:layout_marginTop="350dp" />
 
-    <!-- Clear Log Button (bottom-right) -->
-    <Button
-        android:id="@+id/clearLogButton"
+    <!-- Scrollable button panel (bottom-left corner) -->
+    <ScrollView
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Clear Log"
-        android:textColor="#FFFFFF"
-        android:backgroundTint="#FF4444"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:elevation="4dp" />
+        android:layout_height="150dp"
+        android:layout_marginStart="10dp"
+        android:layout_marginBottom="10dp"
+        android:layout_gravity="bottom|start"
+        android:background="#66000000">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/clearLogButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Clear Log"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#FF4444"
+                android:elevation="4dp" />
+
+            <!-- Future optimization buttons can be added here -->
+
+        </LinearLayout>
+    </ScrollView>
+
 </FrameLayout>
