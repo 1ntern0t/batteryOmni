@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:text="Battery Info"
         android:textSize="16sp"
-        android:layout_marginBottom="12dp"
+        android:layout_marginBottom="52dp"
         android:background="#AA000000"
         android:textColor="#FFFFFF"
         android:padding="12dp"
@@ -57,6 +57,15 @@
                 android:layout_marginBottom="4dp" />
 
             <Button
+                android:id="@+id/testCpuBoostButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Test CPU Boost"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#FFD700"
+                android:layout_marginBottom="4dp" />
+
+            <Button
                 android:id="@+id/cpuBoostButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -74,5 +83,4 @@
                 android:backgroundTint="#8B0000" />
         </LinearLayout>
     </ScrollView>
-
 </LinearLayout>

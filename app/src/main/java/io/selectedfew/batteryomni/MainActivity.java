@@ -1,6 +1,8 @@
 package io.selectedfew.batteryomni;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -8,16 +10,18 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.TextView;
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -42,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
         batteryStatsTextView.setPadding(
                 batteryStatsTextView.getPaddingLeft(),
-                batteryStatsTextView.getPaddingTop() + 200,
+                batteryStatsTextView.getPaddingTop() + 230,
                 batteryStatsTextView.getPaddingRight(),
                 batteryStatsTextView.getPaddingBottom()
         );
@@ -53,6 +57,9 @@ public class MainActivity extends AppCompatActivity {
         Button ramFlushButton = findViewById(R.id.ramFlushButton);
         ramFlushButton.setOnClickListener(v -> flushRAM());
 
+        Button testCpuBoostButton = findViewById(R.id.testCpuBoostButton);
+        testCpuBoostButton.setOnClickListener(v -> generateCpuDiagnosticsReport());
+
         Button cpuBoostButton = findViewById(R.id.cpuBoostButton);
         cpuBoostButton.setOnClickListener(v -> {
             // Placeholder for CPU Boost logic
@@ -60,6 +67,13 @@ public class MainActivity extends AppCompatActivity {
 
         batteryReceiver = new BatteryReceiver();
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 100);
+            }
+        }
 
         createNotificationChannel();
         checkRootAccess();
@@ -154,6 +168,77 @@ public class MainActivity extends AppCompatActivity {
 
             batteryStatsTextView.setText(info.toString());
         }
+    }
+
+    private void generateCpuDiagnosticsReport() {
+        new Thread(() -> {
+            StringBuilder report = new StringBuilder();
+            String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+            report.append("Timestamp: ").append(timestamp).append("\n\n");
+
+            // Root verification
+            boolean root = isRootGranted();
+            report.append("Root Access: ").append(root ? "GRANTED" : "DENIED").append("\n\n");
+
+            // CPU Governors and Status
+            int coreCount = getAvailableCoreCount();
+            for (int i = 0; i < coreCount; i++) {
+                String basePath = "/sys/devices/system/cpu/cpu" + i;
+                String gov = readLineSafe(basePath + "/cpufreq/scaling_governor");
+                String online = readLineSafe(basePath + "/online");
+                String availableGovs = readLineSafe(basePath + "/cpufreq/scaling_available_governors");
+
+                report.append("CPU").append(i).append(" Status:\n")
+                        .append("  Governor: ").append(gov).append("\n")
+                        .append("  Online: ").append(online).append("\n")
+                        .append("  Available Governors: ").append(availableGovs).append("\n\n");
+            }
+
+            try {
+                File path = getExternalFilesDir(null);
+                if (path != null) {
+                    File file = new File(path, "cpu_diagnostics_report.txt");
+                    FileWriter writer = new FileWriter(file, false);
+                    writer.write(report.toString());
+                    writer.flush();
+                    writer.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            runOnUiThread(() -> showNotification("CPU Diagnostics", "CPU diagnostics report saved."));
+        }).start();
+    }
+
+    private String readLineSafe(String path) {
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(path));
+            return reader.readLine();
+        } catch (IOException e) {
+            return "Unavailable";
+        }
+    }
+
+    private boolean isRootGranted() {
+        try {
+            Process su = Runtime.getRuntime().exec("su");
+            su.getOutputStream().write("id\n".getBytes());
+            su.getOutputStream().flush();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(su.getInputStream()));
+            String line = reader.readLine();
+            return line != null && line.contains("uid=0");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private int getAvailableCoreCount() {
+        int count = 0;
+        while (new File("/sys/devices/system/cpu/cpu" + count).exists()) {
+            count++;
+        }
+        return count;
     }
 
     private void checkRootAccess() {
