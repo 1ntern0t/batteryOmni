@@ -1,55 +1,57 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:paddingTop="40dp"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:fillViewport="true">
 
-    <TextView
-        android:id="@+id/batteryStatsTextView"
+    <LinearLayout
+        android:id="@+id/rootLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Battery Info"
-        android:textSize="16sp"
-        android:layout_marginBottom="52dp"
-        android:background="#AA000000"
-        android:textColor="#FFFFFF"
-        android:padding="12dp"
-        android:typeface="monospace" />
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="150dp"
-        android:background="#111111"
-        android:padding="12dp">
+        android:orientation="vertical">
 
         <TextView
-            android:id="@+id/wakelockTextView"
+            android:id="@+id/batteryStatsTextView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Wakelock Info"
-            android:textColor="#00FF00"
-            android:textSize="14sp"
-            android:typeface="monospace" />
-    </ScrollView>
+            android:layout_height="200dp"
+            android:text="Battery Info"
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp"
+            android:background="#AA000000"
+            android:textColor="#FFFFFF"
+            android:padding="12dp"
+            android:typeface="monospace"
+            android:scrollbars="vertical" />
 
-    <ScrollView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:layout_gravity="start|top">
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="150dp"
+            android:background="#111111"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/wakelockTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Wakelock Info"
+                android:textColor="#00FF00"
+                android:textSize="14sp"
+                android:typeface="monospace" />
+        </ScrollView>
 
         <LinearLayout
             android:id="@+id/buttonContainer"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="#AA000000"
-            android:padding="8dp">
+            android:padding="8dp"
+            android:layout_marginTop="16dp">
 
             <Button
                 android:id="@+id/ramFlushButton"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="RAM Flush"
                 android:textColor="#FFFFFF"
@@ -58,7 +60,7 @@
 
             <Button
                 android:id="@+id/testCpuBoostButton"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Test CPU Boost"
                 android:textColor="#FFFFFF"
@@ -67,7 +69,7 @@
 
             <Button
                 android:id="@+id/cpuBoostButton"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="CPU Boost"
                 android:textColor="#FFFFFF"
@@ -76,11 +78,11 @@
 
             <Button
                 android:id="@+id/genReportButton"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Gen Report"
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#8B0000" />
         </LinearLayout>
-    </ScrollView>
-</LinearLayout>
+    </LinearLayout>
+</ScrollView>
